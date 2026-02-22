@@ -1,6 +1,8 @@
 package anilist
 
 import (
+	"strconv"
+
 	"everythingtracker/db"
 
 	"github.com/gin-gonic/gin"
@@ -110,4 +112,40 @@ func SyncMangaHandler(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"message": "Sync Complete", "count": len(data)})
+}
+
+// SearchAnimeHandler handles search requests for AniList anime
+func SearchAnimeHandler(c *gin.Context) {
+	query := c.Query("query")
+	searchCount, _ := strconv.Atoi(c.DefaultQuery("search_count", "10"))
+
+	if query == "" {
+		c.JSON(400, gin.H{"error": "query parameter is required"})
+		return
+	}
+
+	results, err := SearchAnilistAnime(query, searchCount)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(201, results)
+}
+
+// SearchMangaHandler handles search requests for AniList manga
+func SearchMangaHandler(c *gin.Context) {
+	query := c.Query("query")
+	searchCount, _ := strconv.Atoi(c.DefaultQuery("search_count", "10"))
+
+	if query == "" {
+		c.JSON(400, gin.H{"error": "query parameter is required"})
+		return
+	}
+
+	results, err := SearchAnilistManga(query, searchCount)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(201, results)
 }

@@ -14,4 +14,8 @@ func RegisterRoutes(r *gin.Engine) {
 	// Sync endpoints
 	r.POST("/sync/anilist/anime", SyncAnimeHandler)
 	r.POST("/sync/anilist/manga", SyncMangaHandler)
+
+	// Search endpoints
+	r.GET("/search/anilist/anime", SearchAnimeHandler)
+	r.GET("/search/anilist/manga", SearchMangaHandler)
 }

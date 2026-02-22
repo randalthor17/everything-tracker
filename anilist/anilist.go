@@ -1,3 +1,4 @@
+// Package anilist provides functions to extract and map data from AniList media entries
 package anilist
 
 import (

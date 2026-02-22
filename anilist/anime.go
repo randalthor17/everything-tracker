@@ -1,7 +1,6 @@
 package anilist
 
 import (
-	"context"
 	"everythingtracker/base"
 
 	"github.com/rl404/verniy"
@@ -13,9 +12,8 @@ type Anime struct {
 
 func FetchAniListAnime(username string) ([]Anime, error) {
 	v := verniy.New()
-	ctx := context.Background()
 
-	collection, err := v.GetUserAnimeListWithContext(ctx, username)
+	collection, err := v.GetUserAnimeList(username)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +33,7 @@ func FetchAniListAnime(username string) ([]Anime, error) {
 			}
 
 			item := Anime{
-				BaseMedia: base.BaseMedia{
+				base.BaseMedia{
 					Title:           ExtractTitle(entry.ID, entry.Media),
 					ExternalID:      entry.ID,
 					Status:          MapAniListStatus(string(*entry.Status), true),
@@ -48,4 +46,25 @@ func FetchAniListAnime(username string) ([]Anime, error) {
 		}
 	}
 	return items, nil
+}
+
+func SearchAnilistAnime(query string, searchCount int) ([]Anime, error) {
+	v := verniy.New()
+
+	searchPage, err := v.SearchAnime(verniy.PageParamMedia{Search: query}, 1, searchCount)
+	if err != nil {
+		return nil, err
+	}
+
+	var res []Anime
+	for _, media := range searchPage.Media {
+		res = append(res, Anime{
+			base.BaseMedia{
+				Title:      ExtractTitle(media.ID, &media),
+				ExternalID: media.ID,
+			},
+		})
+	}
+
+	return res, nil
 }

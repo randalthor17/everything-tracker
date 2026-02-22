@@ -11,7 +11,7 @@ import (
 
 var DB *gorm.DB
 
-// upsertMedia performs an upsert operation on any media item
+// UpsertMedia performs an upsert operation on any media item
 func UpsertMedia(item any, updateColumns []string) error {
 	return DB.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "external_id"}},
