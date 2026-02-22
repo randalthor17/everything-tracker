@@ -1,4 +1,4 @@
-module everything-tracker
+module everythingtracker
 
 go 1.26.0
 
