@@ -1,0 +1,8 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "go generate ./... && go build -o bin/main ."
+
+[deploy]
+startCommand = "./bin/main"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
