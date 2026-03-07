@@ -10,15 +10,27 @@ import (
 
 // GetAnimeHandler handles GET requests for anime items
 func GetAnimeHandler(c *gin.Context) {
+	username := c.Query("username")
+	if username == "" {
+		c.JSON(400, gin.H{"error": "username query parameter is required"})
+		return
+	}
+
 	var items []Anime
-	db.DB.Find(&items)
+	db.DB.Where("username = ?", username).Find(&items)
 	c.JSON(200, items)
 }
 
 // GetMangaHandler handles GET requests for manga items
 func GetMangaHandler(c *gin.Context) {
+	username := c.Query("username")
+	if username == "" {
+		c.JSON(400, gin.H{"error": "username query parameter is required"})
+		return
+	}
+
 	var items []Manga
-	db.DB.Find(&items)
+	db.DB.Where("username = ?", username).Find(&items)
 	c.JSON(200, items)
 }
 
@@ -30,6 +42,11 @@ func PostAnimeHandler(c *gin.Context) {
 		return
 	}
 
+	if item.Username == "" {
+		c.JSON(400, gin.H{"error": "username is required"})
+		return
+	}
+
 	// upsert logic
 	err := db.UpsertMedia(&item, []string{"title", "status", "progress_current", "updated_at"})
 	if err != nil {
@@ -38,7 +55,7 @@ func PostAnimeHandler(c *gin.Context) {
 	}
 
 	// fetch the updated or created item to return in response
-	db.DB.Where("external_id = ?", item.ExternalID).First(&item)
+	db.DB.Where("username = ? AND external_id = ?", item.Username, item.ExternalID).First(&item)
 
 	c.JSON(201, item)
 }
@@ -51,6 +68,11 @@ func PostMangaHandler(c *gin.Context) {
 		return
 	}
 
+	if item.Username == "" {
+		c.JSON(400, gin.H{"error": "username is required"})
+		return
+	}
+
 	// upsert logic
 	err := db.UpsertMedia(&item, []string{"title", "status", "progress_current", "updated_at"})
 	if err != nil {
@@ -59,7 +81,7 @@ func PostMangaHandler(c *gin.Context) {
 	}
 
 	// fetch the updated or created item to return in response
-	db.DB.Where("external_id = ?", item.ExternalID).First(&item)
+	db.DB.Where("username = ? AND external_id = ?", item.Username, item.ExternalID).First(&item)
 
 	c.JSON(201, item)
 }
@@ -78,8 +100,9 @@ func SyncAnimeHandler(c *gin.Context) {
 		return
 	}
 
-	for _, item := range data {
-		err := db.UpsertMedia(&item, []string{"title", "status", "progress_current", "updated_at"})
+	for i := range data {
+		data[i].Username = username
+		err := db.UpsertMedia(&data[i], []string{"title", "status", "progress_current", "updated_at"})
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -103,8 +126,9 @@ func SyncMangaHandler(c *gin.Context) {
 		return
 	}
 
-	for _, item := range data {
-		err := db.UpsertMedia(&item, []string{"title", "status", "progress_current", "progress_total", "updated_at"})
+	for i := range data {
+		data[i].Username = username
+		err := db.UpsertMedia(&data[i], []string{"title", "status", "progress_current", "progress_total", "updated_at"})
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -127,9 +151,10 @@ func SearchAnimeHandler(c *gin.Context) {
 	results, err := SearchAnilistAnime(query, searchCount)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
-	c.JSON(201, results)
+	c.JSON(200, results)
 }
 
 // SearchMangaHandler handles search requests for AniList manga
@@ -145,7 +170,8 @@ func SearchMangaHandler(c *gin.Context) {
 	results, err := SearchAnilistManga(query, searchCount)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
-	c.JSON(201, results)
+	c.JSON(200, results)
 }

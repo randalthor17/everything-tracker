@@ -10,6 +10,11 @@ type Anime struct {
 	base.BaseMedia
 }
 
+// TableName sets the table name for anime
+func (Anime) TableName() string {
+	return "animes"
+}
+
 func FetchAniListAnime(username string) ([]Anime, error) {
 	v := verniy.New()
 

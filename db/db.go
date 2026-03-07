@@ -14,7 +14,7 @@ var DB *gorm.DB
 // UpsertMedia performs an upsert operation on any media item
 func UpsertMedia(item any, updateColumns []string) error {
 	return DB.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "external_id"}},
+		Columns:   []clause.Column{{Name: "username"}, {Name: "external_id"}},
 		DoUpdates: clause.AssignmentColumns(updateColumns),
 	}).Create(item).Error
 }
@@ -30,5 +30,18 @@ func InitDatabase() {
 
 // MigrateModels migrates the provided models into the database
 func MigrateModels(models ...any) error {
-	return DB.AutoMigrate(models...)
+	err := DB.AutoMigrate(models...)
+	if err != nil {
+		return err
+	}
+
+	// Create composite unique indexes for each table
+	if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_animes_user_external ON animes(username, external_id)").Error; err != nil {
+		return err
+	}
+	if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_mangas_user_external ON mangas(username, external_id)").Error; err != nil {
+		return err
+	}
+
+	return nil
 }

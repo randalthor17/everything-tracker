@@ -17,8 +17,9 @@ const (
 
 type BaseMedia struct {
 	gorm.Model
+	Username        string      `json:"username"`
 	Title           string      `json:"title"`
-	ExternalID      int         `json:"external_id" gorm:"uniqueIndex"`
+	ExternalID      int         `json:"external_id"`
 	Status          MediaStatus `json:"status"`
 	ProgressCurrent float64     `json:"progress_current"`
 	ProgressTotal   float64     `json:"progress_total"`
