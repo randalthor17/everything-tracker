@@ -10,6 +10,11 @@ type Anime struct {
 	base.BaseMedia
 }
 
+// TableName sets the table name for anime
+func (Anime) TableName() string {
+	return "animes"
+}
+
 func FetchAniListAnime(username string) ([]Anime, error) {
 	v := verniy.New()
 
@@ -32,16 +37,13 @@ func FetchAniListAnime(username string) ([]Anime, error) {
 				print("Using 0 as fallback for progress_total\n")
 			}
 
-			item := Anime{
-				base.BaseMedia{
-					Title:           ExtractTitle(entry.ID, entry.Media),
-					ExternalID:      entry.ID,
-					Status:          MapAniListStatus(string(*entry.Status), true),
-					ProgressCurrent: float64(*entry.Progress),
-					ProgressTotal:   progressTotal,
-					ProgressUnit:    "ep",
-				},
-			}
+			item := Anime{}
+			item.Title = ExtractTitle(entry.ID, entry.Media)
+			item.ExternalID = entry.ID
+			item.Status = MapAniListStatus(string(*entry.Status), true)
+			item.ProgressCurrent = float64(*entry.Progress)
+			item.ProgressTotal = progressTotal
+			item.ProgressUnit = "ep"
 			items = append(items, item)
 		}
 	}
@@ -58,12 +60,10 @@ func SearchAnilistAnime(query string, searchCount int) ([]Anime, error) {
 
 	var res []Anime
 	for _, media := range searchPage.Media {
-		res = append(res, Anime{
-			base.BaseMedia{
-				Title:      ExtractTitle(media.ID, &media),
-				ExternalID: media.ID,
-			},
-		})
+		item := Anime{}
+		item.Title = ExtractTitle(media.ID, &media)
+		item.ExternalID = media.ID
+		res = append(res, item)
 	}
 
 	return res, nil

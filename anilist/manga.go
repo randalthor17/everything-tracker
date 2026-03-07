@@ -10,6 +10,11 @@ type Manga struct {
 	base.BaseMedia
 }
 
+// TableName sets the table name for manga
+func (Manga) TableName() string {
+	return "mangas"
+}
+
 func FetchAniListManga(username string) ([]Manga, error) {
 	v := verniy.New()
 
@@ -33,16 +38,13 @@ func FetchAniListManga(username string) ([]Manga, error) {
 				progressTotal = float64(*entry.Progress)
 			}
 
-			item := Manga{
-				base.BaseMedia{
-					Title:           ExtractTitle(entry.ID, entry.Media),
-					ExternalID:      entry.ID,
-					Status:          MapAniListStatus(string(*entry.Status), false),
-					ProgressCurrent: float64(*entry.Progress),
-					ProgressTotal:   progressTotal,
-					ProgressUnit:    "ch",
-				},
-			}
+			item := Manga{}
+			item.Title = ExtractTitle(entry.ID, entry.Media)
+			item.ExternalID = entry.ID
+			item.Status = MapAniListStatus(string(*entry.Status), false)
+			item.ProgressCurrent = float64(*entry.Progress)
+			item.ProgressTotal = progressTotal
+			item.ProgressUnit = "ch"
 			items = append(items, item)
 		}
 	}
@@ -59,11 +61,10 @@ func SearchAnilistManga(query string, searchCount int) ([]Manga, error) {
 
 	var res []Manga
 	for _, media := range searchPage.Media {
-		res = append(res, Manga{
-			base.BaseMedia{
-				Title: ExtractTitle(media.ID, &media),
-			},
-		})
+		item := Manga{}
+		item.Title = ExtractTitle(media.ID, &media)
+		item.ExternalID = media.ID
+		res = append(res, item)
 	}
 
 	return res, nil
