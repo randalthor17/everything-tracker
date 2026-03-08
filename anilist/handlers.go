@@ -85,8 +85,46 @@ func PostAnimeHandler(c *gin.Context) {
 		return
 	}
 
+	if item.ExternalID == 0 {
+		c.JSON(400, gin.H{"error": "external_id is required"})
+		return
+	}
+
+	// Fetch anime data from AniList using external ID
+	anilistData, err := GetAnimeByExternalID(item.ExternalID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch anime from AniList: " + err.Error()})
+		return
+	}
+
+	// Override title and progress unit with AniList data
+	item.Title = anilistData.Title
+	item.ProgressUnit = anilistData.ProgressUnit
+
+	// Handle progress based on whether AniList has episode count
+	if anilistData.ProgressTotal == 0 {
+		// AniList doesn't know total episodes, use user-supplied values for both
+		// item.ProgressCurrent and item.ProgressTotal already set from JSON
+		item.ProgressTotal = item.ProgressCurrent // Assume user is tracking progress out of current if total is unknown
+
+		// Validate that user's progress is non-negative
+		if item.ProgressCurrent < 0 {
+			c.JSON(400, gin.H{"error": "progress_current cannot be negative"})
+			return
+		}
+	} else {
+		// AniList knows total episodes, use it
+		item.ProgressTotal = anilistData.ProgressTotal
+
+		// Validate that user's progress doesn't exceed total
+		if item.ProgressCurrent > item.ProgressTotal {
+			c.JSON(400, gin.H{"error": "progress_current cannot exceed progress_total (" + strconv.FormatFloat(item.ProgressTotal, 'f', 0, 64) + " episodes)"})
+			return
+		}
+	}
+
 	// upsert logic
-	err := db.UpsertMedia(&item, []string{"title", "status", "progress_current", "updated_at"})
+	err = db.UpsertMedia(&item, []string{"title", "status", "progress_current", "progress_total", "progress_unit", "updated_at"})
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -122,8 +160,40 @@ func PostMangaHandler(c *gin.Context) {
 		return
 	}
 
+	if item.ExternalID == 0 {
+		c.JSON(400, gin.H{"error": "external_id is required"})
+		return
+	}
+
+	// Fetch manga data from AniList using external ID
+	anilistData, err := GetMangaByExternalID(item.ExternalID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to fetch manga from AniList: " + err.Error()})
+		return
+	}
+
+	// Override title and progress unit with AniList data
+	item.Title = anilistData.Title
+	item.ProgressUnit = anilistData.ProgressUnit
+
+	// Handle progress based on whether AniList has chapter count
+	if anilistData.ProgressTotal == 0 {
+		// AniList doesn't know total chapters, use user-supplied values for both
+		// item.ProgressCurrent and item.ProgressTotal already set from JSON
+		item.ProgressTotal = item.ProgressCurrent // For ongoing manga, treat current progress as total
+	} else {
+		// AniList knows total chapters, use it
+		item.ProgressTotal = anilistData.ProgressTotal
+
+		// Validate that user's progress doesn't exceed total
+		if item.ProgressCurrent > item.ProgressTotal {
+			c.JSON(400, gin.H{"error": "progress_current cannot exceed progress_total (" + strconv.FormatFloat(item.ProgressTotal, 'f', 0, 64) + " chapters)"})
+			return
+		}
+	}
+
 	// upsert logic
-	err := db.UpsertMedia(&item, []string{"title", "status", "progress_current", "updated_at"})
+	err = db.UpsertMedia(&item, []string{"title", "status", "progress_current", "progress_total", "progress_unit", "updated_at"})
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

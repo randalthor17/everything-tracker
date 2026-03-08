@@ -33,13 +33,13 @@ func FetchAniListAnime(username string) ([]Anime, error) {
 			if entry.Media != nil && entry.Media.Episodes != nil {
 				progressTotal = float64(*entry.Media.Episodes)
 			} else {
-				print("No episode count found for media id ", entry.ID, "\n")
+				print("No episode count found for media id ", entry.Media.ID, "\n")
 				print("Using 0 as fallback for progress_total\n")
 			}
 
 			item := Anime{}
-			item.Title = ExtractTitle(entry.ID, entry.Media)
-			item.ExternalID = entry.ID
+			item.Title = ExtractTitle(entry.Media.ID, entry.Media)
+			item.ExternalID = entry.Media.ID
 			item.Status = MapAniListStatus(string(*entry.Status), true)
 			item.ProgressCurrent = float64(*entry.Progress)
 			item.ProgressTotal = progressTotal
@@ -67,4 +67,27 @@ func SearchAnilistAnime(query string, searchCount int) ([]Anime, error) {
 	}
 
 	return res, nil
+}
+
+func GetAnimeByExternalID(externalID int) (*Anime, error) {
+	v := verniy.New()
+
+	media, err := v.GetAnime(externalID)
+	if err != nil {
+		return nil, err
+	}
+	
+	item := Anime{}
+	item.Title = ExtractTitle(media.ID, media)
+	item.ExternalID = media.ID
+
+	// AniList doesn't reliably track total episodes for upcoming anime
+	if media.Episodes != nil && *media.Episodes > 0 {
+		item.ProgressTotal = float64(*media.Episodes)
+	} else {
+		item.ProgressTotal = 0 // Upcoming/unknown
+	}
+
+	item.ProgressUnit = "ep"
+	return &item, nil
 }
